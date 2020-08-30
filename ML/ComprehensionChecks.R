@@ -466,3 +466,74 @@ Grey_x[Grey_x > 50 & Grey_x < 205] <- 1
 GreyPixels <- rowSums(Grey_x)
 sum(GreyPixels)
 sum(GreyPixels)/(784*60000)
+
+##distance
+library(dslabs)
+data(tissue_gene_expression)
+dim(tissue_gene_expression$x)
+table(tissue_gene_expression$y)
+
+d <- dist(tissue_gene_expression$x)
+abs(d[1]-d[2])
+abs(d[39]-d[40])
+abs(d[73]-d[74])
+
+tissue_gene_expression$y[1]
+tissue_gene_expression$y[2]
+tissue_gene_expression$y[39]
+tissue_gene_expression$y[40]
+tissue_gene_expression$y[73]
+tissue_gene_expression$y[74]
+
+abs(d[73]-d[39])
+
+#Knn_Algorithm________________________________________
+##Heights
+library(dslabs)
+library(purrr)
+data("heights")
+
+#set.seed(2) #if you are using R 3.5 or earlier
+set.seed(1, sample.kind = "Rounding") #if you are using R 3.6 or later
+
+test_index <- createDataPartition(heights$sex, times = 1, p = 0.5, list = FALSE)
+train_set <- heights %>% slice(-test_index)
+test_set <- heights %>% slice(test_index)
+
+#pick the k in knn
+ks <- seq(1, 101, 3)
+Scores <- sapply(ks, function(k){
+  fit <- knn3(sex ~ height, data = train_set, k = k)
+  y_hat <- predict(fit, test_set, type = "class")
+  F_meas(data = y_hat, reference = factor(test_set$sex))
+})
+
+#pick the k that maximizes accuracy using the estimates built on the test data
+ks[which.max(Scores)]
+max(Scores)
+
+result <- data.frame(ks,Scores)
+result %>% ggplot(aes(ks,Scores)) +
+  geom_line()
+
+##tissu_gene_expresion
+data("tissue_gene_expression")
+tiss <- as.data.frame(tissue_gene_expression)
+set.seed(1, sample.kind = "Rounding") #if you are using R 3.6 or later
+
+test_index <- createDataPartition(tiss$y, times = 1, p = 0.5, list = FALSE)
+train_set <- tiss %>% slice(-test_index)
+test_set <- tiss %>% slice(test_index)
+
+#pick the k in knn
+ks <- seq(1, 11, 2)
+Scores <- sapply(ks, function(k){
+  fit <- knn3(y ~ ., data = train_set, k = k)
+  y_hat <- predict(fit, test_set, type = "class")
+  confusionMatrix(y_hat, test_set$y)$overall[["Accuracy"]]
+})
+Scores
+
+result <- data.frame(ks,Scores)
+result %>% ggplot(aes(ks,Scores)) +
+  geom_line()
