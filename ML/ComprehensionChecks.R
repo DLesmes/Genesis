@@ -537,3 +537,91 @@ Scores
 result <- data.frame(ks,Scores)
 result %>% ggplot(aes(ks,Scores)) +
   geom_line()
+
+
+#k folds Cross validation________________________________________________
+
+library(tidyverse)
+library(caret)
+install.packages(e1071)
+
+# set.seed(1996) #if you are using R 3.5 or earlier
+set.seed(1996, sample.kind="Rounding") #if you are using R 3.6 or later
+n <- 1000
+p <- 10000
+x <- matrix(rnorm(n*p), n, p)
+colnames(x) <- paste("x", 1:ncol(x), sep = "_")
+y <- rbinom(n, 1, 0.5) %>% factor()
+
+x_subset <- x[ ,sample(p, 100)]
+fit <- train(x_subset, y, method = "glm")
+fit$results
+
+install.packages("BiocManager")
+BiocManager::install("genefilter")
+library(genefilter)
+tt <- colttests(x, y)
+
+pvals <- tt$p.value
+
+str(pvals)
+
+ind <- ifelse(abs(pvals) < 0.01, 1, 0)
+sum(ind)
+str(x_subset)
+
+ind <- which(abs(pvals) < 0.01)
+x_subset <- x[,ind]
+colnames(x_subset) <- colnames(x[,ind])
+fit <- train(x_subset, y, method = "glm")
+fit$results
+
+fit <- train(x_subset, y, method = "knn", tuneGrid = data.frame(k = seq(101, 301, 25)))
+ggplot(fit)
+
+
+library(dslabs)
+data(tissue_gene_expression)
+str(tissue_gene_expression)
+#tiss <- as.data.frame(tissue_gene_expression)
+tiss <- tissue_gene_expression
+dat <- tiss$x
+fit <- train(dat, tiss$y, method = "knn", tuneGrid = data.frame(k = seq(1, 7, 2)))
+ggplot(fit)
+
+
+#Bootstrap______________________________________________________________________________
+library(dslabs)
+library(caret)
+data(mnist_27)
+# set.seed(1995) # if R 3.5 or earlier
+set.seed(1995, sample.kind="Rounding") # if R 3.6 or later
+indexes <- createResample(mnist_27$train$y, 10)
+
+
+Mindexes <- as.data.frame(indexes)
+
+Mindexes3 <- Mindexes[ ,1] == 3
+sum(Mindexes3)
+Mindexes4 <- Mindexes[ ,1] == 4
+sum(Mindexes4)
+Mindexes7 <- Mindexes[ ,1] == 7
+sum(Mindexes7)
+
+length(Mindexes[ ,1])
+
+set.seed(1, sample.kind="Rounding") # if R 3.6 or later
+B <- 10000
+exp_value <- replicate(B,{
+  y <- rnorm(100,0,1)
+  quantile(y,0.75)
+})
+mean(exp_value)
+sd(exp_value)
+
+set.seed(1, sample.kind = "Rounding") # if R 3.6 or later
+y <- rnorm(100, 0, 1)
+indexes <- createResample(y, 10)
+quantiles <- replicate(1,{for (i in indexes){
+  quantile(y[i],0.75)
+  }})
