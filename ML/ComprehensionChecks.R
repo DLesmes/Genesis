@@ -598,7 +598,6 @@ data(mnist_27)
 set.seed(1995, sample.kind="Rounding") # if R 3.6 or later
 indexes <- createResample(mnist_27$train$y, 10)
 
-
 Mindexes <- as.data.frame(indexes)
 
 Mindexes3 <- Mindexes[ ,1] == 3
@@ -622,6 +621,88 @@ sd(exp_value)
 set.seed(1, sample.kind = "Rounding") # if R 3.6 or later
 y <- rnorm(100, 0, 1)
 indexes <- createResample(y, 10)
-quantiles <- replicate(1,{for (i in indexes){
-  quantile(y[i],0.75)
-  }})
+Mindexes <- as.matrix.data.frame(Mindexes)
+
+quatiles[0] <- quantile(y[Mindexes[ ,1]],0.75)
+quatiles[1] <- quantile(y[Mindexes[ ,2]],0.75)
+quatiles[2] <- quantile(y[Mindexes[ ,3]],0.75)
+quatiles[3] <- quantile(y[Mindexes[ ,4]],0.75)
+quatiles[4] <- quantile(y[Mindexes[ ,5]],0.75)
+quatiles[5] <- quantile(y[Mindexes[ ,6]],0.75)
+quatiles[6] <- quantile(y[Mindexes[ ,7]],0.75)
+quatiles[7] <- quantile(y[Mindexes[ ,8]],0.75)
+quatiles[8] <- quantile(y[Mindexes[ ,9]],0.75)
+quatiles[9] <- quantile(y[Mindexes[ ,10]],0.75)
+mean(quatiles)
+sd(quatiles)
+
+for (i in seq(1:10)){quatiles[i]<-quantile(y[Mindexes[ ,i]],0.75)}
+mean(quatiles)
+sd(quatiles)
+
+
+quantiles <- replicate(10,{
+tmp <- sample(y,100,replace = TRUE)
+quantile(tmp,0.75)
+})
+mean(quantiles)
+sd(quantiles)
+
+quantiles <- sapply(indexes, function(x){
+  quantile(y[x],0.75)
+  })
+mean(quantiles)
+sd(quantiles)
+
+set.seed(1, sample.kind = "Rounding") # if R 3.6 or later
+y <- rnorm(100, 0, 1) 
+indexes <- createResample(y, 10)
+quantiles <- sapply(indexes, function(x){quantile(y[x],0.75)})
+mean(quantiles)
+sd(quantiles)
+
+
+
+q0 <- qplot(y, bin=30, color='red')
+q1 <- qplot(y[Mindexes[ ,1]], bin=30)
+q2 <- qplot(y[Mindexes[ ,2]], bin=30)
+q3 <- qplot(y[Mindexes[ ,3]], bin=30)
+q4 <- qplot(y[Mindexes[ ,4]], bin=30)
+q5 <- qplot(y[Mindexes[ ,5]], bin=30)
+q6 <- qplot(y[Mindexes[ ,6]], bin=30)
+q7 <- qplot(y[Mindexes[ ,7]], bin=30)
+q8 <- qplot(y[Mindexes[ ,8]], bin=30)
+q9 <- qplot(y[Mindexes[ ,9]], bin=30)
+q10 <- qplot(y[Mindexes[ ,10]], bin=30)
+grid.arrange(q0,q1,q2,q3,q4,q5,q6,ncol = 3)
+grid.arrange()
+q0
+
+for (i in seq(1:10)){qplot(y[Mindexes[ ,i]], bin=50, color='red')}
+
+##QDA&LDA_______________________________________________________________________
+library(dslabs)
+library(caret)
+library(tidyverse)
+data("tissue_gene_expression")
+
+# set.seed(1993) #if using R 3.5 or earlier
+set.seed(1993, sample.kind="Rounding") # if using R 3.6 or later
+ind <- which(tissue_gene_expression$y %in% c("cerebellum", "hippocampus"))
+y <- droplevels(tissue_gene_expression$y[ind])
+x <- tissue_gene_expression$x[ind, ]
+x <- x[, sample(ncol(x), 10)]
+dat <- data.frame(y,x)
+
+data_lda <- train(y ~ ., method = "lda", data = dat)
+confusionMatrix(predict(data_lda, dat), y)$overall["Accuracy"]
+
+# set.seed(1993) #if using R 3.5 or earlier
+set.seed(1993, sample.kind="Rounding") # if using R 3.6 or later
+ind <- which(tissue_gene_expression$y %in% c("cerebellum", "hippocampus"))
+y <- droplevels(tissue_gene_expression$y[ind])
+x <- tissue_gene_expression$x[ind, ]
+x <- x[, sample(ncol(x), 10)]
+dat <- data.frame(y,x)
+
+data_qda <- train(y ~ ., method = "qda", data = dat)
