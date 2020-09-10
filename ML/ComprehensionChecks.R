@@ -706,3 +706,67 @@ x <- x[, sample(ncol(x), 10)]
 dat <- data.frame(y,x)
 
 data_qda <- train(y ~ ., method = "qda", data = dat)
+
+
+data_lda_scaled <- train(y ~ ., method = "lda", data = dat, preProcess = "center")
+confusionMatrix(predict(data_lda, dat), y)$overall["Accuracy"]
+
+#the same but all types
+library(dslabs)      
+library(caret)
+data("tissue_gene_expression")
+
+# set.seed(1993) # if using R 3.5 or earlier
+set.seed(1993, sample.kind="Rounding") # if using R 3.6 or later
+y <- tissue_gene_expression$y
+x <- tissue_gene_expression$x
+x <- x[, sample(ncol(x), 10)]
+dat <- data.frame(y,x)
+
+data_lda_scaled_all <- train(y ~ ., method = "lda", data = dat, preProcess = "center")
+
+
+#####Classifcation tree________________________________________________________________
+
+library(rpart)
+n <- 1000
+sigma <- 0.25
+# set.seed(1) # if using R 3.5 or ealier
+set.seed(1, sample.kind = "Rounding") # if using R 3.6 or later
+x <- rnorm(n, 0, 1)
+y <- 0.75 * x + rnorm(n, 0, sigma)
+dat <- data.frame(x = x, y = y)
+
+fit <- rpart(y ~ ., data = dat)
+# visualize the splits 
+plot(fit, margin = 0.1)
+text(fit, cex = 0.75)
+
+dat %>% 
+  mutate(y_hat = predict(fit)) %>% 
+  ggplot() +
+  geom_point(aes(x, y)) +
+  geom_step(aes(x, y_hat), col=2)
+
+
+####Ramdon forest______________________________________________________________________
+
+library(randomForest)
+fit <- randomForest(y ~ x, data = dat)
+  dat %>% 
+  mutate(y_hat = predict(fit)) %>% 
+  ggplot() +
+  geom_point(aes(x, y)) +
+  geom_step(aes(x, y_hat), col = "red")
+  
+plot(fit)
+
+library(randomForest)
+fit <- randomForest(y ~ x, data = dat, nodesize = 50, maxnodes = 25)
+  dat %>% 
+  mutate(y_hat = predict(fit)) %>% 
+  ggplot() +
+  geom_point(aes(x, y)) +
+  geom_step(aes(x, y_hat), col = "red")
+
+?randomForest
