@@ -394,7 +394,7 @@ plot(train_rpart)
 # compute accuracy
 confusionMatrix(predict(train_rpart, mnist_27$test), mnist_27$test$y)$overall["Accuracy"]
 
-##Ramdon forest______________________________________________________________________
+##Ramdon forest_________________________________________________________________________________
 library(randomForest)
 train_rf <- randomForest(y ~ ., data=mnist_27$train)
 confusionMatrix(predict(train_rf, mnist_27$test), mnist_27$test$y)$overall["Accuracy"]
@@ -406,7 +406,7 @@ train_rf_2 <- train(y ~ .,
                     data = mnist_27$train)
 confusionMatrix(predict(train_rf_2, mnist_27$test), mnist_27$test$y)$overall["Accuracy"]
 
-##Caret pakages____________________________________________________________________
+##Caret pakages_________________________________________________________________________________
 library(tidyverse)
 library(dslabs)
 data("mnist_27")

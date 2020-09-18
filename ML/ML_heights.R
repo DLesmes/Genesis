@@ -474,3 +474,4 @@ polls_2008 %>%
   ggplot() +
   geom_point(aes(day, margin)) +
   geom_line(aes(day, y_hat), col="red")
+

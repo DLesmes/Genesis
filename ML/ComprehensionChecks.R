@@ -770,3 +770,50 @@ fit <- randomForest(y ~ x, data = dat, nodesize = 50, maxnodes = 25)
   geom_step(aes(x, y_hat), col = "red")
 
 ?randomForest
+  
+##Caret_Library________________________________________________________________
+  
+library(dslabs)
+library(rpart)
+library(caret)
+library(tidyverse)
+data("tissue_gene_expression")
+tiss <- as.data.frame(tissue_gene_expression)
+rm(y)
+
+set.seed(1991, sample.kind = "Rounding")
+train_rpart <- train(y ~ ., method = "rpart",
+      data = tiss,
+      tuneGrid = data.frame(cp = seq(0, 0.1, 0.01)))
+ggplot(train_rpart, highlight = TRUE)
+
+set.seed(1991, sample.kind = "Rounding")
+train_rpart_ctrl0 <- train(y ~ .,
+      method = "rpart",
+      data = tiss,
+      tuneGrid = data.frame(cp = seq(0, 0.1, 0.01)),
+      control = rpart.control(minsplit = 0))
+#ggplot(train_rpart, highlight = TRUE)
+
+confusionMatrix(train_rpart_ctrl0)
+#$Accuracy
+#$overall["Accuracy"]
+
+fit_tiss <- rpart(.outcome ~ ., data = train_rpart_ctrl0$trainingData)
+# visualize the splits 
+plot(fit_tiss, margin = 0.1)
+text(fit_tiss, cex = 0.75)
+
+library(randomForest)
+set.seed(1991, sample.kind = "Rounding")
+train_rf <- train(y ~ .,
+                 method = "rf",
+                 data = tiss,
+                 tuneGrid = data.frame(mtry = 100),
+                 nodesize = 1)
+#ggplot(train_rf, highlight = TRUE)
+#train_rf$bestTune
+varImp(train_rf)
+
+tree_terms <- as.character(unique(train_rf$finalModel$frame$var[!(train_rf$finalModel$frame$var == "<leaf>")]))
+tree_terms
