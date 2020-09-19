@@ -779,7 +779,6 @@ library(caret)
 library(tidyverse)
 data("tissue_gene_expression")
 tiss <- as.data.frame(tissue_gene_expression)
-rm(y)
 
 set.seed(1991, sample.kind = "Rounding")
 train_rpart <- train(y ~ ., method = "rpart",
@@ -809,10 +808,11 @@ set.seed(1991, sample.kind = "Rounding")
 train_rf <- train(y ~ .,
                  method = "rf",
                  data = tiss,
-                 tuneGrid = data.frame(mtry = 100),
-                 nodesize = 1)
-#ggplot(train_rf, highlight = TRUE)
-#train_rf$bestTune
+                 tuneGrid = data.frame(mtry = seq(50, 200, 25)),
+                 nodesize = 1,
+                 ntree = 500)
+ggplot(train_rf, highlight = TRUE)
+train_rf$bestTune
 varImp(train_rf)
 
 tree_terms <- as.character(unique(train_rf$finalModel$frame$var[!(train_rf$finalModel$frame$var == "<leaf>")]))
