@@ -13,9 +13,10 @@ titanic_clean <- titanic_train %>%
          Embarked = factor(Embarked),
          Age = ifelse(is.na(Age), median(Age, na.rm = TRUE), Age), # NA age to median age
          FamilySize = SibSp + Parch + 1) %>%    # count family members
+  factor(Survived, levels = c('0','1'))  
   select(Survived,  Sex, Pclass, Age, Fare, SibSp, Parch, FamilySize, Embarked)
 
-
+##Primera Parte_________________________________________________________________________----
 nrow(titanic_clean)
 set.seed(42, sample.kind="Rounding")
 index_train <- createDataPartition(titanic_clean$Survived, times = 1, p=0.2, list = FALSE)
@@ -135,6 +136,69 @@ confusionMatrix(Sex_Pclass_survived,y_hat)$byClass["Balanced Accuracy"]
 confusionMatrix(Sex_survived,y_hat)$byClass["Balanced Accuracy"]
 confusionMatrix(Pclass_survived,y_hat)$byClass["Balanced Accuracy"]
 
-##Segunda parte__________________________________________________________________________________-----------------
+##Segunda parte________________________________________________________________________-----
 ##Survival by fare - LDA and QDA________________________
+set.seed(1, sample.kind = "Rounding")
+train_qda <- train(Survived ~ Fare, method = "qda", data = train_set, na.action = na.fail, contrasts = NULL)
+y_hat <- predict(train_qda, test_set)
+y_hat <- factor(y_hat, levels = c('0','1'))
+confusionMatrix(data = y_hat, reference = test_set$Survived)$overall["Accuracy"]
 
+set.seed(1, sample.kind = "Rounding")
+train_lda <- train(Survived ~ Fare, method = "lda", data = train_set, na.action = na.fail, contrasts = NULL)
+y_hat <- predict(train_lda, test_set)
+y_hat <- factor(y_hat, levels = c('0','1'))
+confusionMatrix(data = y_hat, reference = test_set$Survived)$overall["Accuracy"]
+
+titanic_clean %>% ggplot(aes(Fare))+
+  geom_histogram(binwidth = 10, fill='green', alpha=0.5)+
+  ggtitle('Tarifa')
+
+##Logistic regression models_____________________________
+set.seed(1, sample.kind = "Rounding")
+fit_glm <- glm(Survived ~ Age, data=train_set, family = "binomial")
+p_hat_glm <- predict(fit_glm, test_set,  type = "response")
+plot(test_set$Survived,p_hat_glm)
+  abline(h=0.385, col="blue")
+y_hat_glm <- factor(ifelse(p_hat_glm > 0.5, 1, 0), levels = c('0','1'))
+confusionMatrix(data = y_hat_glm, reference = test_set$Survived)$overall["Accuracy"]
+
+B <- seq(-1,0,0.005)
+Age_Accracy <- sapply(B, function(B){
+  y_hat_glm <- factor(ifelse(p_hat_glm > B, 1, 0), levels = c('0','1'))
+  confusionMatrix(data = y_hat_glm, reference = test_set$Survived)$overall["Accuracy"]
+  })
+plot(B,Age_Accracy)
+
+
+names(train_set)
+set.seed(1, sample.kind = "Rounding")
+fit_glm <- glm(Survived ~ Sex+Pclass+Age+Fare, data=train_set, family = "binomial")
+p_hat_glm <- predict(fit_glm, test_set)
+plot(test_set$Survived,p_hat_glm)
+y_hat_glm <- factor(ifelse(p_hat_glm > 0, 1, 0))
+confusionMatrix(data = y_hat_glm, reference = test_set$Survived)$overall["Accuracy"]
+
+set.seed(1, sample.kind = "Rounding")
+fit_glm <- glm(Survived ~ ., data=train_set, family = "binomial")
+p_hat_glm <- predict(fit_glm, test_set)
+plot(test_set$Survived,p_hat_glm)
+y_hat_glm <- factor(ifelse(p_hat_glm > 0, 1, 0))
+confusionMatrix(data = y_hat_glm, reference = test_set$Survived)$overall["Accuracy"]
+
+###kNN model__________________________________________
+set.seed(6, sample.kind = "Rounding")
+fit_knn <- train(Survived ~ .,
+                 method = "knn",
+                 data = as.data.frame(train_set),
+                 tuneGrid = data.frame(k = seq(3, 51, 2)))
+ggplot(fit_knn, highlight = TRUE)
+fit_knn$bestTune
+
+fit_knn <- knn3(Survived ~ ., data = train_set, k=fit_knn$bestTune)
+y_hat_knn <- predict(fit_knn, test_set, type = "class")
+y_hat_knn <- factor(y_hat_knn, levels = c('0','1'))
+confusionMatrix(data = y_hat_knn, reference = test_set$Survived)$overall["Accuracy"]
+
+###Cross-validation__________________________________
+set.seed(8, sample.kind = "Rounding")
