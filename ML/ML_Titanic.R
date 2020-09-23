@@ -202,3 +202,33 @@ confusionMatrix(data = y_hat_knn, reference = test_set$Survived)$overall["Accura
 
 ###Cross-validation__________________________________
 set.seed(8, sample.kind = "Rounding")
+control <- trainControl(method = "cv", number = 10, p = .9)
+train_knn_cv <- train(Survived ~ ., method = "knn", 
+                      data = train_set,
+                      tuneGrid = data.frame(k = seq(3, 51, 2)),
+                      trControl = control)
+ggplot(train_knn_cv, highlight = TRUE)
+
+fit_knn <- knn3(Survived ~ ., data = train_set, k=train_knn_cv$bestTune)
+y_hat_knn <- predict(fit_knn, test_set, type = "class")
+y_hat_knn <- factor(y_hat_knn, levels = c('0','1'))
+confusionMatrix(data = y_hat_knn, reference = test_set$Survived)$overall["Accuracy"]
+
+##Classification tree model____________________________
+set.seed(10, sample.kind = "Rounding")
+train_rpart <- train(Survived ~ .,
+                     method = "rpart",
+                     tuneGrid = data.frame(cp =seq(0, 0.05, 0.002)),
+                     data = train_set)
+plot(train_rpart)
+train_rpart$bestTune
+# compute accuracy
+confusionMatrix(predict(train_rpart, test_set), test_set$Survived)$overall["Accuracy"]
+tree_terms <- as.character(unique(train_rpart$finalModel$frame$var[!(train_rpart$finalModel$frame$var == "<leaf>")]))
+tree_terms
+
+example <- test_set[1,]
+example
+example <- rbind(example,c(1,"male",3,22,7.25,1,0,2,"S"))
+str(example)
+predict(train_rpart,example)
