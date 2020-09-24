@@ -227,8 +227,67 @@ confusionMatrix(predict(train_rpart, test_set), test_set$Survived)$overall["Accu
 tree_terms <- as.character(unique(train_rpart$finalModel$frame$var[!(train_rpart$finalModel$frame$var == "<leaf>")]))
 tree_terms
 
-example <- test_set[1,]
-example
-example <- rbind(example,c(1,"male",3,22,7.25,1,0,2,"S"))
+fit_rpart <- rpart(Survived ~ ., data = train_set,cp = 0.02)
+y_hat_rpart <- predict(fit_rpart, test_set, type = "class")
+y_hat_rpart <- factor(y_hat_rpart, levels = c('0','1'))
+confusionMatrix(y_hat_rpart, test_set$Survived)$overall["Accuracy"]
+
+
+# visualize the splits
+plot(fit_rpart, margin = 0.1)
+text(fit_rpart, cex = 0.75)
+
+
+example <- test_set[1,2:9]
+example <- rbind(example,c("male","",28,"","","",""))
+example <- rbind(example,c("female",2,"","","","",""))
+example <- rbind(example,c("female",3,"",8,"","",""))
+example <- rbind(example,c("male","",5,"","","",""))
+example <- rbind(example,c("female",3,"",25,"","",""))
+example <- rbind(example,c("female",1,17,"","","",""))
+example <- rbind(example,c("male",1,17,"","","",""))
+
+example$Pclass <- as.integer(example$Pclass)
+example$Age <- as.numeric(example$Age)
+example$Fare <- as.numeric(example$Fare)
+example$SibSp <- as.integer(example$SibSp)
+example$Parch <- as.integer(example$Parch)
+example$FamilySize <- as.numeric(example$FamilySize)
 str(example)
-predict(train_rpart,example)
+example
+survived_example <- predict(fit_rpart,newdata = example, type = "class")
+survived_example
+
+our_test_set <- data.frame(
+  Sex = c("male", "female", "female", "male", "female", "female", "male"),
+  Age = as.numeric(c(28,"","",5,"",17,17)),
+  Pclass = as.integer(c("",2,3,"",3,1,1)),
+  Fare =  as.numeric(c("","",8.00,"",25.00,"","")),
+  SibSp = as.integer(rep(1,7)),
+  Parch = as.integer(rep(1,7)),
+  FamilySize = rep(1,7),
+  Embarked = factor( sample(levels(test_set$Embarked),size = 7, replace = T) ) )
+
+survived_example <- predict(fit_rpart,our_test_set, type = "class")
+print(survived_example)
+
+#Random forest model________________________________________________________
+library(randomForest)
+set.seed(14, sample.kind = "Rounding")
+train_rf <- train(Survived ~ .,
+                     method = "rf",
+                     tuneGrid = data.frame(mtry = seq(1:7)),
+                     data = train_set,
+                     ntree = 100)
+plot(train_rf, highlight = TRUE)
+train_rf$bestTune
+confusionMatrix(predict(train_rf, test_set), test_set$Survived)$overall["Accuracy"]
+varImp(train_rf)
+
+fit_rf <- randomForest(Survived ~ ., data = train_set, mtry = 2)
+y_hat_rf <- predict(fit_rf, test_set, type = "class")
+y_hat_rf <- factor(y_hat_rf, levels = c('0','1'))
+confusionMatrix(y_hat_rf, test_set$Survived)$overall["Accuracy"]
+
+#survived_example <- predict(fit_rf,our_test_set, type = "prob")
+#print(survived_example)
